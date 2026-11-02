@@ -36,6 +36,12 @@ cd dsh-purge-ports
 node bin/purge.mjs install --host all --scope user
 ```
 
+不想 clone 也可以直接跑：
+
+```bash
+npx -y github:shenwei322/dsh-purge-ports install --host all --scope user
+```
+
 写入位置：
 
 ```
@@ -177,10 +183,29 @@ dsh-purge-ports/
 
 ## 已知边界
 
-- WorkBuddy 的项目上下文有约 8 KB 上限，所以项目作用域默认用精简版；用户级 `CODEBUDDY.md` 没有这个限制，但为一致性也用精简版，要完整版就 `--lite false` 不行——直接改 `core/` 或手动写完整版进 `~/.codebuddy/CODEBUDDY.md`。
+- WorkBuddy 的项目上下文有约 8 KB 上限，所以 WorkBuddy 一路默认精简版；ZCode 用户级用完整版。要换档：`--lite` 强制精简，改 `core/` 后 `node scripts/sync.mjs` 同步。
 - ZCode 的 `SessionStart` 只在会话开始触发。会话压缩/恢复后如果规则掉了，用 `/purge on` 或 `purge` skill 补一次。
 - 两个宿主的插件清单格式按各自当前版本（WorkBuddy `.codebuddy-plugin/`、ZCode `.zcode-plugin/`）写；宿主升级改了字段的话，改 `plugin.json` 即可，CLI 通道不受影响。
 - 规则本身是对抗性提示词。它改变的是模型的行为倾向，不改变宿主自己的权限、沙箱、审批门。宿主拦下来的动作，规则层拦不回来。
+
+## 排障
+
+**WorkBuddy 用户级不生效**：确认它是否读取 `~/.codebuddy/CODEBUDDY.md`。不读就走项目作用域——项目根的 `CODEBUDDY.md` 一定会被当项目上下文注入：
+
+```bash
+cd /path/to/project
+node /path/to/dsh-purge-ports/bin/purge.mjs install --host workbuddy --scope project
+```
+
+**ZCode hook 没触发**：先单独跑一次 hook，确认输出是 JSON：
+
+```bash
+node plugins/purge-zcode/hooks/session-start.mjs | head -c 200
+```
+
+再看 `~/.zcode/cli/plugins/` 下插件是否真的装进去了（`cache/<市场>/purge-zcode/<版本>/`）。
+
+**规则被压缩掉**：用 `/purge on` 手动补，或再跑一次 `install`（幂等，不会叠加）。
 
 ---
 
