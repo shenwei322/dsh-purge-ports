@@ -1,0 +1,15 @@
+dsh-purge-ports
+Copyright 2026 shenwei322
+
+本仓库是 dsh-purge 的宿主移植层（WorkBuddy / ZCode）。
+
+上游来源：
+  dsh-purge — Copyright 2026 YuJunZhiXue
+  https://github.com/YuJunZhiXue/dsh-purge
+  Licensed under the Apache License, Version 2.0.
+
+core/prompt.zh.md 与 core/prompt.lite.md 改写自上游默认注入提示词
+（lib/default-prompt-inject.zh.md），保留署名与许可条款。
+
+This product is licensed under the Apache License, Version 2.0.
+Derivative works must retain this NOTICE and attribution.

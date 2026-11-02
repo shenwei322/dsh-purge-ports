@@ -1,0 +1,14 @@
+{
+  "name": "purge-zcode",
+  "version": "1.0.0",
+  "description": "破甲规则移植（ZCode 版）：SessionStart hook 注入完整规则 + /purge 命令 + 可复用 skill。来源 YuJunZhiXue/dsh-purge。",
+  "author": {
+    "name": "shenwei322"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/shenwei322/dsh-purge-ports",
+  "keywords": ["dsh-purge", "zcode", "jailbreak", "prompt", "red-team", "hooks", "skill"],
+  "skills": "skills",
+  "commands": "commands",
+  "hooks": "hooks"
+}

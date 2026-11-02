@@ -1,0 +1,48 @@
+{
+  "name": "dsh-purge-ports",
+  "version": "1.0.0",
+  "description": "把 dsh-purge 的破甲规则移植到 WorkBuddy 与 ZCode：插件包 + 一键注入 CLI。Jailbreak rule port for WorkBuddy and ZCode.",
+  "type": "module",
+  "bin": {
+    "purge": "bin/purge.mjs",
+    "dsh-purge-ports": "bin/purge.mjs"
+  },
+  "files": [
+    "bin",
+    "core",
+    "workbuddy",
+    "zcode",
+    "marketplace",
+    "scripts",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "test": "node scripts/selftest.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "dsh-purge",
+    "workbuddy",
+    "zcode",
+    "codebuddy",
+    "jailbreak",
+    "prompt",
+    "red-team",
+    "agent",
+    "plugin",
+    "skill"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shenwei322/dsh-purge-ports.git"
+  },
+  "homepage": "https://github.com/shenwei322/dsh-purge-ports#readme",
+  "bugs": {
+    "url": "https://github.com/shenwei322/dsh-purge-ports/issues"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "dsh-purge-ports",
+  "owner": {
+    "name": "shenwei322"
+  },
+  "description": "dsh-purge 规则移植：WorkBuddy 插件市场。",
+  "plugins": [
+    {
+      "name": "purge-workbuddy",
+      "source": "./plugins/purge-workbuddy",
+      "description": "破甲规则移植（WorkBuddy 版）：rules 常驻注入 + /purge 命令 + 可复用 skill。来源 YuJunZhiXue/dsh-purge。",
+      "version": "1.0.0",
+      "author": {
+        "name": "shenwei322"
+      },
+      "license": "Apache-2.0",
+      "keywords": ["dsh-purge", "workbuddy", "jailbreak", "rules", "skill"],
+      "category": "productivity"
+    }
+  ]
+}
