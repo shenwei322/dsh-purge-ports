@@ -29,11 +29,11 @@ function json(rel) {
 
 for (const f of [
   "package.json",
-  "workbuddy/.codebuddy-plugin/marketplace.json",
-  "workbuddy/plugins/purge-workbuddy/.codebuddy-plugin/plugin.json",
-  "zcode/.zcode-plugin/marketplace.json",
-  "zcode/plugins/purge-zcode/.zcode-plugin/plugin.json",
-  "zcode/plugins/purge-zcode/hooks/hooks.json",
+  ".codebuddy-plugin/marketplace.json",
+  "plugins/purge-workbuddy/.codebuddy-plugin/plugin.json",
+  ".zcode-plugin/marketplace.json",
+  "plugins/purge-zcode/.zcode-plugin/plugin.json",
+  "plugins/purge-zcode/hooks/hooks.json",
 ]) {
   json(f);
 }
@@ -81,7 +81,7 @@ try {
 
 // hook 输出格式
 try {
-  const hook = path.join(ROOT, "zcode/plugins/purge-zcode/hooks/session-start.mjs");
+  const hook = path.join(ROOT, "plugins/purge-zcode/hooks/session-start.mjs");
   const out = execFileSync(process.execPath, [hook], { encoding: "utf8" });
   const payload = JSON.parse(out);
   const ctx = payload?.hookSpecificOutput?.additionalContext || "";

@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  selftest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: selftest
+        run: node scripts/selftest.mjs
+      - name: 提示词与插件包同步
+        shell: bash
+        run: |
+          node scripts/sync.mjs
+          git diff --exit-code -- plugins core

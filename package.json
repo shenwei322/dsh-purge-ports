@@ -10,16 +10,17 @@
   "files": [
     "bin",
     "core",
-    "workbuddy",
-    "zcode",
-    "marketplace",
+    "plugins",
+    ".codebuddy-plugin",
+    ".zcode-plugin",
     "scripts",
     "README.md",
     "LICENSE",
     "NOTICE"
   ],
   "scripts": {
-    "test": "node scripts/selftest.mjs"
+    "test": "node scripts/selftest.mjs",
+    "sync": "node scripts/sync.mjs"
   },
   "engines": {
     "node": ">=18"

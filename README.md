@@ -72,20 +72,22 @@ node bin/purge.mjs uninstall --host all  # 只删标记块，保留你自己的�
 
 ### 方式 B：装成插件
 
+仓库根就是两个宿主的市场根：`.codebuddy-plugin/marketplace.json` 给 WorkBuddy，`.zcode-plugin/marketplace.json` 给 ZCode，插件都在 `plugins/` 下。
+
 **WorkBuddy**
 
-1. 打开 WorkBuddy → 插件/市场 → 添加市场 → 选择本地目录：
+1. 打开 WorkBuddy → 插件 / 市场 → 添加市场 → 选择本地目录（clone 下来的仓库根）：
    ```
-   <仓库>/workbuddy
+   /path/to/dsh-purge-ports
    ```
 2. 在市场里安装 `purge-workbuddy`。
 3. 新开一个会话，插件自带的 `rules/purge.md` 会随项目上下文注入。
 
 **ZCode**
 
-1. ZCode → 插件 → 添加市场 → 本地目录：
+1. ZCode → 插件 → 添加市场 → 本地目录（同一个仓库根）：
    ```
-   <仓库>/zcode
+   /path/to/dsh-purge-ports
    ```
 2. 安装 `purge-zcode`。
 3. 新开会话时 `SessionStart` hook 会把完整规则作为 `additionalContext` 注入。
@@ -148,20 +150,20 @@ dsh-purge-ports/
 ├── core/
 │   ├── prompt.zh.md                               完整规则（12.9 KB）
 │   └── prompt.lite.md                             精简规则（5.4 KB）
-├── workbuddy/
-│   ├── .codebuddy-plugin/marketplace.json         市场清单
-│   └── plugins/purge-workbuddy/
-│       ├── .codebuddy-plugin/plugin.json
-│       ├── rules/purge.md                         常驻规则
-│       ├── skills/purge/SKILL.md
-│       └── commands/purge.md
-├── zcode/
-│   ├── .zcode-plugin/marketplace.json
-│   └── plugins/purge-zcode/
+├── .codebuddy-plugin/marketplace.json             WorkBuddy 市场清单（根 = 市场根）
+├── .zcode-plugin/marketplace.json                 ZCode 市场清单
+├── plugins/
+│   ├── purge-workbuddy/
+│   │   ├── .codebuddy-plugin/plugin.json
+│   │   ├── rules/purge.md                         常驻规则
+│   │   ├── skills/purge/SKILL.md
+│   │   └── commands/purge.md
+│   └── purge-zcode/
 │       ├── .zcode-plugin/plugin.json
 │       ├── hooks/hooks.json                       SessionStart
 │       ├── hooks/session-start.mjs                输出 additionalContext
 │       ├── hooks/prompt.zh.md                     完整规则副本
+│       ├── rules/purge.md                         精简规则副本
 │       ├── skills/purge/SKILL.md
 │       └── commands/purge.md
 └── scripts/

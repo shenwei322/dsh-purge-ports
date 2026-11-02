@@ -2,9 +2,9 @@
 /**
  * 把 core/ 的提示词同步进两个插件包，保证仓库内只有一份规则源。
  *
- *   core/prompt.zh.md   → zcode/plugins/purge-zcode/hooks/prompt.zh.md
- *   core/prompt.lite.md → workbuddy/plugins/purge-workbuddy/rules/purge.md
- *                       → zcode/plugins/purge-zcode/rules/purge.md
+ *   core/prompt.zh.md   → plugins/purge-zcode/hooks/prompt.zh.md
+ *   core/prompt.lite.md → plugins/purge-workbuddy/rules/purge.md
+ *                       → plugins/purge-zcode/rules/purge.md
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -22,6 +22,6 @@ const write = (p, s) => {
 const full = read("core/prompt.zh.md");
 const lite = read("core/prompt.lite.md");
 
-write("zcode/plugins/purge-zcode/hooks/prompt.zh.md", full);
-write("workbuddy/plugins/purge-workbuddy/rules/purge.md", lite);
-write("zcode/plugins/purge-zcode/rules/purge.md", lite);
+write("plugins/purge-zcode/hooks/prompt.zh.md", full);
+write("plugins/purge-workbuddy/rules/purge.md", lite);
+write("plugins/purge-zcode/rules/purge.md", lite);
