@@ -1,5 +1,9 @@
 # dsh-purge-ports
 
+[![ci](https://github.com/shenwei322/dsh-purge-ports/actions/workflows/ci.yml/badge.svg)](https://github.com/shenwei322/dsh-purge-ports/actions/workflows/ci.yml)
+![node](https://img.shields.io/badge/node-%E2%89%A518-339933)
+![license](https://img.shields.io/badge/license-Apache--2.0-blue)
+
 把 [dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 的破甲规则移植到 **WorkBuddy** 与 **ZCode**：两边各一个插件包，外加一个零依赖 CLI 做规则注入。
 
 > 上游 dsh-purge 是装在 DeepSeek Harness 上的红队评测插件。本仓库只搬它最核心的那层——注入进系统提示词的行为契约——并按两个宿主的插件与规则机制重写。不含上游的红队演练台、资产库、技能库。
