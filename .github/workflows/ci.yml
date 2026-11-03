@@ -19,6 +19,8 @@ jobs:
           node-version: 20
       - name: selftest
         run: node scripts/selftest.mjs
+      - name: 覆盖率评测
+        run: node scripts/eval.mjs
       - name: 提示词与插件包同步
         shell: bash
         run: |

@@ -1,6 +1,6 @@
 {
   "name": "dsh-purge-ports",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "把 dsh-purge 的破甲规则移植到 WorkBuddy 与 ZCode：插件包 + 一键注入 CLI。Jailbreak rule port for WorkBuddy and ZCode.",
   "type": "module",
   "bin": {

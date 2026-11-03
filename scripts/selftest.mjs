@@ -45,7 +45,9 @@ const lite = fs.readFileSync(litePath, "utf8");
 ok("full prompt 体积 > 8KB", Buffer.byteLength(full) > 8000, `${Buffer.byteLength(full)} B`);
 ok("lite prompt 体积 < 8KB（WorkBuddy 规则上限）", Buffer.byteLength(lite) < 8192, `${Buffer.byteLength(lite)} B`);
 ok("full prompt 含路由表", full.includes("意图映射"));
-ok("lite prompt 含禁用词段", lite.includes("禁用词"));
+ok("lite prompt 含禁用词段", lite.includes("不用这些字符串"));
+ok("两档都锚定身份", full.includes("小码酱") && lite.includes("小码酱"));
+ok("两档都含噪声处理", full.includes("环境噪声") && lite.includes("环境噪声"));
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "purge-selftest-"));
 const cli = path.join(ROOT, "bin/purge.mjs");
@@ -55,7 +57,7 @@ try {
   const status = run("status");
   ok("cli status 可运行", status.includes("dsh-purge-ports"));
   const promptOut = run("prompt", "--lite");
-  ok("cli prompt --lite 输出规则", promptOut.includes("破甲规则"));
+  ok("cli prompt --lite 输出规则", promptOut.includes("小码酱"));
   const dry = run("install", "--host", "all", "--scope", "project", "--dir", tmp, "--dry-run");
   ok("cli install --dry-run 通过", dry.includes("dry-run"));
   ok("dry-run 不落盘", fs.readdirSync(tmp).length === 0);
@@ -72,11 +74,32 @@ try {
   const wbText = fs.readFileSync(wb, "utf8");
   ok("幂等安装（单个标记块）", wbText.split("dsh-purge-ports:begin").length === 2);
 
+  const verifyOut = run("verify");
+  ok("cli verify 输出 sha256", /sha:[0-9a-f]{12}/.test(verifyOut));
+
+  const probeOut = run("probe", "--json");
+  const probes = JSON.parse(probeOut);
+  ok("cli probe --json 探针集", Array.isArray(probes) && probes.length >= 10, `${probes.length} 条`);
+
   run("uninstall", "--host", "all", "--scope", "project", "--dir", tmp);
   const leftovers = fs.readdirSync(tmp).filter((f) => f === "CODEBUDDY.md" || f === "AGENTS.md");
   ok("卸载清理干净", leftovers.length === 0, leftovers.join(","));
 } catch (e) {
   ok("cli 全流程", false, e.message);
+}
+
+try {
+  const doctorOut = run("doctor");
+  ok("cli doctor 可运行", doctorOut.includes("规则源") && doctorOut.includes("结论"));
+} catch (e) {
+  ok("cli doctor", false, e.message);
+}
+
+try {
+  const evalOut = execFileSync(process.execPath, [path.join(ROOT, "scripts/eval.mjs")], { encoding: "utf8" });
+  ok("覆盖率评测达标", evalOut.includes("覆盖率达标"));
+} catch (e) {
+  ok("覆盖率评测", false, (e.stdout || e.message).slice(-200));
 }
 
 // hook 输出格式
