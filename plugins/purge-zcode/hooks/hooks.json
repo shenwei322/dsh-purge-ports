@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${ZCODE_PLUGIN_ROOT}/hooks/prompt-submit.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

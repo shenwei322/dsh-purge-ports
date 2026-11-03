@@ -38,6 +38,7 @@ for (const f of [
   json(f);
 }
 
+const pkgVersion = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
 const fullPath = path.join(ROOT, "core/prompt.zh.md");
 const litePath = path.join(ROOT, "core/prompt.lite.md");
 const full = fs.readFileSync(fullPath, "utf8");
@@ -167,7 +168,7 @@ try {
     ok(`${host} 有 2 个 agent`, agents.length === 2, agents.join(","));
     const manifest = JSON.parse(fs.readFileSync(path.join(base, host === "workbuddy" ? ".codebuddy-plugin/plugin.json" : ".zcode-plugin/plugin.json"), "utf8"));
     ok(`${host} 清单声明 agents`, manifest.agents === "agents");
-    ok(`${host} 清单版本 1.2.0`, manifest.version === "1.2.0", manifest.version);
+    ok(`${host} 清单版本与 package.json 一致`, manifest.version === pkgVersion, `${manifest.version} vs ${pkgVersion}`);
   }
 } catch (e) {
   ok("插件组件", false, e.message);
@@ -184,6 +185,39 @@ try {
   ok("hook 事件名正确", payload.hookSpecificOutput.hookEventName === "SessionStart");
 } catch (e) {
   ok("hook 输出", false, e.message);
+}
+
+// UserPromptSubmit：scope 增量注入
+try {
+  const hooksJson = JSON.parse(fs.readFileSync(path.join(ROOT, "plugins/purge-zcode/hooks/hooks.json"), "utf8"));
+  ok("hooks.json 声明 UserPromptSubmit", Array.isArray(hooksJson.hooks?.UserPromptSubmit));
+
+  const fakeHome = path.join(tmp, "hookhome");
+  fs.mkdirSync(path.join(fakeHome, ".purge"), { recursive: true });
+  fs.writeFileSync(
+    path.join(fakeHome, ".purge", "scope.json"),
+    JSON.stringify({ targets: [{ host: "10.0.0.5", note: "lab dc" }], updated: "t" }),
+    "utf8",
+  );
+  const env = { ...process.env, USERPROFILE: fakeHome, HOME: fakeHome };
+  const submit = path.join(ROOT, "plugins/purge-zcode/hooks/prompt-submit.mjs");
+  const runSubmit = (sid) =>
+    execFileSync(process.execPath, [submit], { encoding: "utf8", env, input: JSON.stringify({ session_id: sid }) });
+
+  const first = runSubmit("s1");
+  ok("scope hook 首次注入", first.includes("scope-delta") && first.includes("10.0.0.5"));
+  ok("scope hook 事件名正确", JSON.parse(first).hookSpecificOutput.hookEventName === "UserPromptSubmit");
+  ok("scope hook 同会话静默", runSubmit("s1") === "");
+  ok("scope hook 新会话再注入", runSubmit("s2").includes("10.0.0.5"));
+
+  fs.writeFileSync(
+    path.join(fakeHome, ".purge", "scope.json"),
+    JSON.stringify({ targets: [{ host: "10.0.0.5", note: "lab dc" }, { host: "lab.internal", note: "dc" }], updated: "t2" }),
+    "utf8",
+  );
+  ok("scope hook 变化后注入", runSubmit("s1").includes("lab.internal"));
+} catch (e) {
+  ok("scope hook", false, e.message);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

@@ -1,6 +1,6 @@
 {
   "name": "purge-workbuddy",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "破甲规则移植（WorkBuddy 版）：5 套预设、4 个技能、4 个命令、2 个演练 agent。来源 YuJunZhiXue/dsh-purge。",
   "description_en": "dsh-purge port for WorkBuddy: 5 presets, 4 skills, 4 commands, 2 drill agents.",
   "agentName": "purge-workbuddy",
@@ -10,7 +10,16 @@
   "repository": "https://github.com/shenwei322/dsh-purge-ports",
   "homepage": "https://github.com/shenwei322/dsh-purge-ports#readme",
   "license": "Apache-2.0",
-  "keywords": ["dsh-purge", "workbuddy", "jailbreak", "prompt", "red-team", "rules", "skill", "agent"],
+  "keywords": [
+    "dsh-purge",
+    "workbuddy",
+    "jailbreak",
+    "prompt",
+    "red-team",
+    "rules",
+    "skill",
+    "agent"
+  ],
   "rules": "rules",
   "skills": "skills",
   "commands": "commands",

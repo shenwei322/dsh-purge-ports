@@ -130,7 +130,8 @@ function scopePath() {
 
 function readScope() {
   try {
-    const j = JSON.parse(fs.readFileSync(scopePath(), "utf8"));
+    const raw = fs.readFileSync(scopePath(), "utf8").replace(/^\uFEFF/, "");
+    const j = JSON.parse(raw);
     return { targets: Array.isArray(j.targets) ? j.targets : [], updated: j.updated || null };
   } catch {
     return { targets: [], updated: null };

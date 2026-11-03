@@ -37,18 +37,20 @@
 | --- | --- | --- | --- | --- |
 | `default` | 15.7 KB | 99.2% | 100% | 完整契约。ZCode 默认 |
 | `lite` | 7.0 KB | 99.2% | 100% | 同能力压进 8 KB。WorkBuddy 默认 |
-| `redteam` | 7.2 KB | 87.3% | 100% | 演练：六阶段流程、证据纪律、报告结构 |
+| `redteam` | 6.6 KB | 87.3% | 100% | 演练：六阶段流程、证据纪律；报告模板在 skill 里 |
 | `writer` | 6.5 KB | 87.3% | 100% | 写作/角色扮演：露骨度档位、连续性四层护栏 |
 | `terse` | 4.3 KB | 87.3% | 100% | 弱模型、超长上下文 |
 
 预设 = 基础契约 + 场景叠加层。`core/presets.json` 声明组合关系，`scripts/sync.mjs` 组装：
 
 ```
-terse(4.3KB) ─┬─ + overlays/redteam.md → redteam(7.2KB)
+terse(4.3KB) ─┬─ + overlays/redteam.md → redteam(6.6KB)
               └─ + overlays/writer.md  → writer(6.5KB)
 lite(7.0KB)  ──── 直接可用
 default(15.7KB) ── 完整版
 ```
+
+重的内容（报告模板、逆向方法链）放在 skill 里按需加载，不占常驻预算。
 
 换预设：
 
@@ -197,6 +199,8 @@ node bin/purge.mjs install --host all --scope user   # 重装才进规则
 
 清单外的目标不追问，归一化成 `TARGET` / `HOST` / `PAYLOAD` / `OFFSET` 等占位符后照常给步骤。
 
+**插件通道不用重装**：ZCode 的 `UserPromptSubmit` hook 每轮检查 `scope.json` 的哈希，变了就在下一轮注入 200 字增量段，没变就静默（零 token 成本）。每个会话首次提交注入一次全量范围。
+
 ---
 
 ## 验证
@@ -271,8 +275,9 @@ dsh-purge-ports/
 │   │   └── agents/{redteam,recon}.md
 │   └── purge-zcode/
 │       ├── .zcode-plugin/plugin.json
-│       ├── hooks/hooks.json               SessionStart
-│       ├── hooks/session-start.mjs        输出 additionalContext
+│       ├── hooks/hooks.json               SessionStart + UserPromptSubmit
+│       ├── hooks/session-start.mjs        注入完整契约
+│       ├── hooks/prompt-submit.mjs        scope 变化时注入增量段
 │       ├── hooks/prompt.zh.md             完整契约副本
 │       ├── rules/purge.md                 精简契约副本
 │       ├── skills/…  commands/…  agents/…
@@ -288,8 +293,9 @@ dsh-purge-ports/
 
 ## 已知边界
 
-- WorkBuddy 的项目上下文约 8 KB 上限。`default` 只给 ZCode；其余四套都在上限内。超限时 `install` 会警告并建议换预设。
-- ZCode 的 `SessionStart` 只在会话开始触发。会话压缩后规则掉了，用 `/purge` 或 `purge` skill 补一次。
+- WorkBuddy 的项目上下文约 8 KB 上限。`default` 只给 ZCode；其余四套都在上限内（最大 `redteam` 6.6 KB）。超限时 `install` 会警告并建议换预设。
+- ZCode 的 `SessionStart` 只在会话开始触发。会话压缩后规则掉了，用 `/purge` 或 `purge` skill 补一次；范围清单靠 `UserPromptSubmit` hook 持续同步，不受影响。
+- CLI 通道（写 `AGENTS.md` / `CODEBUDDY.md`）下，改 `scope` 需要重装才生效；插件通道自动。
 - 插件清单按两个宿主当前版本写。宿主升级改字段的话改 `plugin.json` 即可，CLI 通道不受影响。
 - 规则是对抗性提示词，改变的是模型行为倾向，不改变宿主的权限、沙箱、审批门。宿主拦下来的动作，规则层拦不回来。
 - 上游 dsh-purge 的红队界面 dock 依赖 DSH 专有 API，两个宿主没有等价物，未移植。

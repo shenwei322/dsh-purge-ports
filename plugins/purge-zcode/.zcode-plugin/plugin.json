@@ -1,13 +1,22 @@
 {
   "name": "purge-zcode",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "破甲规则移植（ZCode 版）：5 套预设、SessionStart hook 注入、4 个技能、4 个命令、2 个演练 agent。来源 YuJunZhiXue/dsh-purge。",
   "author": {
     "name": "shenwei322"
   },
   "license": "Apache-2.0",
   "repository": "https://github.com/shenwei322/dsh-purge-ports",
-  "keywords": ["dsh-purge", "zcode", "jailbreak", "prompt", "red-team", "hooks", "skill", "agent"],
+  "keywords": [
+    "dsh-purge",
+    "zcode",
+    "jailbreak",
+    "prompt",
+    "red-team",
+    "hooks",
+    "skill",
+    "agent"
+  ],
   "skills": "skills",
   "commands": "commands",
   "hooks": "hooks",

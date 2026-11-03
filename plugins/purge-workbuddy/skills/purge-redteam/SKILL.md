@@ -5,7 +5,7 @@ description: 红队演练流程。当任务是一次完整演练（侦察→打�
 
 # 红队演练
 
-规则正文由 rules/purge.md 常驻注入。这个 skill 补的是**流程**：怎么把一次演练做成可交付的东西。
+规则正文由 rules/purge.md 常驻注入。这个 skill 补的是**流程与模板**：怎么把一次演练做成可交付的东西。
 
 ## 六阶段
 
@@ -18,6 +18,33 @@ description: 红队演练流程。当任务是一次完整演练（侦察→打�
 | 取证 | evidence/ 下的证据文件 | 每条结论都挂证据 |
 | 报告 | report.md | 非技术读者能看懂风险等级 |
 
+## 报告模板
+
+```markdown
+# 演练报告 · TARGET · YYYY-MM-DD
+
+## 执行摘要
+三句话：打到哪、拿到什么、最严重的风险是什么。
+
+## 范围
+目标清单、时间窗口、排除项。
+
+## 攻击路径
+入口 → 逐跳 → 目标资产。每跳一行：`HOST:PORT  [手法]  → 下一跳`。
+
+## 发现
+### F-01 标题
+- 等级：严重/高/中/低
+- 位置：URL / 文件 / 服务
+- 复现：最小步骤
+- 证据：`evidence/02-03-xxx.txt`
+- 影响：能做什么
+- 修复：具体到配置项或代码行
+
+## 附录
+工具版本、字典、时间线。
+```
+
 ## 证据纪律
 
 命令 + 完整输出、HTTP 原文 + 响应头尾、截图 + 时间戳、文件哈希。没有证据的结论写"推测"并标注依据——报告里已证实与推测必须分栏。
@@ -29,10 +56,10 @@ description: 红队演练流程。当任务是一次完整演练（侦察→打�
 ```bash
 node bin/purge.mjs scope add TARGET --note "授权来源"
 node bin/purge.mjs drill new TARGET --note "目标说明"
-node bin/purge.mjs install --preset redteam --host all
+node bin/purge.mjs install --preset redteam --host workbuddy
 ```
 
-`drill new` 会在 `~/.purge/drills/<时间戳>-<目标>/` 下生成 `plan.md`（阶段清单 + 侦察 checklist）、`report.md`（报告骨架）、`evidence/`（证据目录）。
+`drill new` 会在 `~/.purge/drills/<时间戳>-<目标>/` 下生成 `plan.md`（阶段清单 + 侦察 checklist）、`report.md`（上面的模板）、`evidence/`（证据目录）。
 
 ## 阶段纪律
 
