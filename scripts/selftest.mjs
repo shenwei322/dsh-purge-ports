@@ -97,9 +97,80 @@ try {
 
 try {
   const evalOut = execFileSync(process.execPath, [path.join(ROOT, "scripts/eval.mjs")], { encoding: "utf8" });
-  ok("覆盖率评测达标", evalOut.includes("覆盖率达标"));
+  ok("覆盖率评测全部预设达标", evalOut.includes("全部预设达标"));
 } catch (e) {
   ok("覆盖率评测", false, (e.stdout || e.message).slice(-200));
+}
+
+// 预设体系
+try {
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, "core/presets.json"), "utf8"));
+  const names = Object.keys(cfg.presets);
+  ok("presets.json 声明 5 套预设", names.length === 5, names.join(","));
+  for (const n of names) {
+    const p = path.join(ROOT, "presets", `${n}.md`);
+    const size = fs.existsSync(p) ? Buffer.byteLength(fs.readFileSync(p, "utf8")) : 0;
+    ok(`预设 ${n} 存在`, size > 0, `${size} B`);
+    if (n !== "default") ok(`预设 ${n} 在 WorkBuddy 上限内`, size < 8192, `${size} B`);
+  }
+  const listOut = run("presets");
+  ok("cli presets 列出全部", names.every((n) => listOut.includes(n)));
+} catch (e) {
+  ok("预设体系", false, e.message);
+}
+
+// scope / drill：用临时 HOME，不碰真实用户目录
+try {
+  const fakeHome = path.join(tmp, "home");
+  fs.mkdirSync(fakeHome, { recursive: true });
+  const env = { ...process.env, USERPROFILE: fakeHome, HOME: fakeHome };
+  const runHome = (...args) => execFileSync(process.execPath, [cli, ...args], { encoding: "utf8", env });
+
+  ok("scope 初始为空", runHome("scope", "list").includes("范围清单为空"));
+  ok("scope add 成功", runHome("scope", "add", "10.0.0.5", "--note", "lab dc").includes("已加入"));
+  const scopeFile = path.join(fakeHome, ".purge", "scope.json");
+  ok("scope.json 落盘", fs.existsSync(scopeFile));
+  ok("scope list 有记录", runHome("scope", "list").includes("10.0.0.5"));
+
+  // 带 scope 安装后，规则块里出现「已声明范围」
+  const scoped = path.join(tmp, "scoped");
+  fs.mkdirSync(scoped, { recursive: true });
+  runHome("install", "--host", "zcode", "--scope", "project", "--dir", scoped);
+  const withScope = fs.readFileSync(path.join(scoped, "AGENTS.md"), "utf8");
+  ok("scope 渲染进规则块", withScope.includes("已声明范围") && withScope.includes("10.0.0.5"));
+
+  ok("scope rm 成功", runHome("scope", "rm", "10.0.0.5").includes("已移除"));
+  ok("scope clear 成功", runHome("scope", "clear").includes("已清空"));
+
+  const drillOut = runHome("drill", "new", "10.0.0.5", "--note", "t");
+  ok("drill new 创建目录", drillOut.includes("已创建"));
+  const drills = path.join(fakeHome, ".purge", "drills");
+  const dirs = fs.readdirSync(drills);
+  ok("drill 目录结构完整", fs.existsSync(path.join(drills, dirs[0], "plan.md")) && fs.existsSync(path.join(drills, dirs[0], "report.md")) && fs.existsSync(path.join(drills, dirs[0], "evidence")));
+  ok("drill list 有记录", runHome("drill", "list").includes(dirs[0]));
+} catch (e) {
+  ok("scope / drill", false, e.message);
+}
+
+// 插件组件完整性
+try {
+  for (const [host, dir] of [
+    ["workbuddy", "plugins/purge-workbuddy"],
+    ["zcode", "plugins/purge-zcode"],
+  ]) {
+    const base = path.join(ROOT, dir);
+    const skills = fs.readdirSync(path.join(base, "skills"));
+    const commands = fs.readdirSync(path.join(base, "commands")).filter((f) => f.endsWith(".md"));
+    const agents = fs.readdirSync(path.join(base, "agents")).filter((f) => f.endsWith(".md"));
+    ok(`${host} 有 4 个技能`, skills.length === 4, skills.join(","));
+    ok(`${host} 有 4 个命令`, commands.length === 4, commands.join(","));
+    ok(`${host} 有 2 个 agent`, agents.length === 2, agents.join(","));
+    const manifest = JSON.parse(fs.readFileSync(path.join(base, host === "workbuddy" ? ".codebuddy-plugin/plugin.json" : ".zcode-plugin/plugin.json"), "utf8"));
+    ok(`${host} 清单声明 agents`, manifest.agents === "agents");
+    ok(`${host} 清单版本 1.2.0`, manifest.version === "1.2.0", manifest.version);
+  }
+} catch (e) {
+  ok("插件组件", false, e.message);
 }
 
 // hook 输出格式

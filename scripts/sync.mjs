@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
- * 把 core/ 的提示词同步进两个插件包，保证仓库内只有一份规则源。
+ * 组装并同步产物，保证仓库内只有一份规则源。
  *
- *   core/prompt.zh.md   → plugins/purge-zcode/hooks/prompt.zh.md
- *   core/prompt.lite.md → plugins/purge-workbuddy/rules/purge.md
- *                       → plugins/purge-zcode/rules/purge.md
+ *   core/prompt.zh.md   → presets/default.md
+ *   core/prompt.lite.md → presets/lite.md
+ *   base + overlay      → presets/redteam.md, presets/writer.md
+ *   presets/*.md        → plugins/purge-zcode/hooks/prompt.zh.md（完整版）
+ *   presets/lite.md     → plugins/<host>/rules/purge.md
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,9 +21,31 @@ const write = (p, s) => {
   console.log(`synced → ${p} (${Buffer.byteLength(s, "utf8")} B)`);
 };
 
-const full = read("core/prompt.zh.md");
-const lite = read("core/prompt.lite.md");
+const cfg = JSON.parse(read("core/presets.json"));
+const bases = {
+  full: read("core/prompt.zh.md"),
+  lite: read("core/prompt.lite.md"),
+  terse: read("presets/terse.md"),
+};
 
-write("plugins/purge-zcode/hooks/prompt.zh.md", full);
-write("plugins/purge-workbuddy/rules/purge.md", lite);
-write("plugins/purge-zcode/rules/purge.md", lite);
+/** 组装一个预设的完整正文。 */
+function build(name) {
+  const p = cfg.presets[name];
+  const base = bases[p.base];
+  if (!p.overlay) return base;
+  const overlay = read(`presets/overlays/${p.overlay}.md`);
+  return `${base}\n\n---\n\n${overlay}`;
+}
+
+const built = {};
+for (const name of Object.keys(cfg.presets)) {
+  const body = build(name);
+  built[name] = body;
+  if (name === "terse") continue; // 手写源，不回写
+  write(`presets/${name}.md`, body);
+}
+
+// 插件包产物：WorkBuddy 用精简版常驻，ZCode hook 用完整版
+write("plugins/purge-workbuddy/rules/purge.md", built.lite);
+write("plugins/purge-zcode/hooks/prompt.zh.md", built.default);
+write("plugins/purge-zcode/rules/purge.md", built.lite);

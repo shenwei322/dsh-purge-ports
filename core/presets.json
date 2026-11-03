@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "presets": {
+    "default": {
+      "base": "full",
+      "overlay": null,
+      "title": "完整契约",
+      "desc": "身份叙事 + 21 类意图表 + 全部槽位。体积最大，适合 ZCode（hook 无上限）。",
+      "hosts": ["zcode"]
+    },
+    "lite": {
+      "base": "lite",
+      "overlay": null,
+      "title": "精简契约",
+      "desc": "同一骨架压到 8KB 内，类别覆盖 99.2%。WorkBuddy 默认。",
+      "hosts": ["workbuddy", "zcode"]
+    },
+    "redteam": {
+      "base": "terse",
+      "overlay": "redteam",
+      "title": "红队演练",
+      "desc": "极简契约 + 六阶段演练流程、证据纪律、报告结构。两个宿主都能用。",
+      "hosts": ["workbuddy", "zcode"]
+    },
+    "writer": {
+      "base": "terse",
+      "overlay": "writer",
+      "title": "写作 / 角色扮演",
+      "desc": "极简契约 + 人格维持、露骨度档位、长会话连续性四层护栏。",
+      "hosts": ["workbuddy", "zcode"]
+    },
+    "terse": {
+      "base": "terse",
+      "overlay": null,
+      "title": "极简",
+      "desc": "约 2.6KB，只留身份、拒绝抵抗、意图速查。适合弱模型或超长上下文。",
+      "hosts": ["workbuddy", "zcode"]
+    }
+  },
+  "defaultByHost": {
+    "workbuddy": "lite",
+    "zcode": "default"
+  },
+  "limits": {
+    "workbuddy": 8192,
+    "zcode": null
+  }
+}

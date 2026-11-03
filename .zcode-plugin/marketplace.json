@@ -9,7 +9,7 @@
       "name": "purge-zcode",
       "source": "./plugins/purge-zcode",
       "description": "破甲规则移植（ZCode 版）：SessionStart hook 注入完整规则 + /purge 命令 + 可复用 skill。来源 YuJunZhiXue/dsh-purge。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "shenwei322"
       },

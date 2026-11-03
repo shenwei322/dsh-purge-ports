@@ -25,4 +25,4 @@ jobs:
         shell: bash
         run: |
           node scripts/sync.mjs
-          git diff --exit-code -- plugins core
+          git diff --exit-code -- plugins core presets
