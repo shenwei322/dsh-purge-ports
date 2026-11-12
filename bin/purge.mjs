@@ -124,6 +124,63 @@ function loadPreset(name) {
   return fs.readFileSync(p, "utf8").trimEnd();
 }
 
+/** base 名字 → 源文件路径（与 scripts/sync.mjs 保持一致）。 */
+const BASE_FILES = {
+  full: "core/prompt.zh.md",
+  lite: "core/prompt.lite.md",
+  terse: "presets/terse.md",
+};
+
+/**
+ * 按 core/presets.json 声明的 base+overlay 关系重算某个预设的期望正文。
+ * 不读 presets/<name>.md，而是从源文件重新组装——这样才能同时发现
+ * 「组装产物漂移」和「注入块漂移」两种问题。
+ */
+function expectedPreset(name) {
+  const p = PRESET_CFG.presets?.[name];
+  if (!p) return null;
+  const baseFile = BASE_FILES[p.base];
+  if (!baseFile) return null;
+  const base = readIfExists(path.join(ROOT, baseFile));
+  if (base === null) return null;
+  const body = base.trimEnd();
+  if (!p.overlay) return body;
+  const overlay = readIfExists(path.join(ROOT, "presets", "overlays", `${p.overlay}.md`));
+  if (overlay === null) return null;
+  return `${body}\n\n---\n\n${overlay.trimEnd()}`;
+}
+
+/** 归一换行，避免 CRLF/LF 差异被误判成漂移。 */
+function norm(s) {
+  return s.replace(/\r\n/g, "\n");
+}
+
+/** 把注入块正文拆成「预设正文」与「已声明范围段」。 */
+function splitScope(body) {
+  const b = norm(body);
+  const i = b.indexOf("\n## 已声明范围");
+  if (i < 0) return { core: b.trim(), scope: "" };
+  return { core: b.slice(0, i).trim(), scope: b.slice(i).trim() };
+}
+
+/** 找出与这段正文完全一致的预设名；找不到就是漂移。 */
+function matchPreset(core) {
+  const target = norm(core).trim();
+  for (const name of PRESET_NAMES) {
+    const exp = expectedPreset(name);
+    if (exp && norm(exp).trim() === target) return name;
+  }
+  return null;
+}
+
+/** 范围段与当前 scope.json 是否同步。 */
+function scopeInSync(scopeText) {
+  const want = norm(renderScope()).trim();
+  const have = norm(scopeText).trim();
+  if (!want) return !have;
+  return want === have;
+}
+
 function scopePath() {
   return path.join(HOME, ".purge", "scope.json");
 }
@@ -339,34 +396,75 @@ function sha(s) {
   return crypto.createHash("sha256").update(s, "utf8").digest("hex").slice(0, 12);
 }
 
+/** 宿主自带的插件注册文件位置——权威来源，能覆盖任意目录布局。 */
+function registryFiles(host) {
+  return host === "zcode"
+    ? [path.join(HOME, ".zcode", "plugins", "installed_plugins.json")]
+    : [
+        path.join(HOME, ".workbuddy", "plugins", "installed_plugins.json"),
+        path.join(HOME, ".workbuddy-ai", "plugins", "installed_plugins.json"),
+        path.join(HOME, ".codebuddy", "plugins", "installed_plugins.json"),
+      ];
+}
+
 function findInstalledPlugin(host) {
   const roots = {
     workbuddy: [
+      path.join(HOME, ".workbuddy", "plugins", "cache"),
       path.join(HOME, ".workbuddy-ai", "plugins", "cache"),
       path.join(HOME, ".codebuddy", "plugins", "cache"),
     ],
     zcode: [path.join(HOME, ".zcode", "cli", "plugins", "cache")],
   }[host] || [];
-  const hits = [];
+  const hits = new Set();
   for (const root of roots) {
     if (!fs.existsSync(root)) continue;
     for (const market of fs.readdirSync(root, { withFileTypes: true })) {
       if (!market.isDirectory()) continue;
       const p = path.join(root, market.name, `purge-${host}`);
-      if (fs.existsSync(p)) hits.push(p);
+      if (fs.existsSync(p)) hits.add(p);
     }
   }
-  return hits;
+  // 注册表兜底：宿主把插件装在哪都认
+  for (const reg of registryFiles(host)) {
+    const txt = readIfExists(reg);
+    if (!txt) continue;
+    let json;
+    try {
+      json = JSON.parse(txt);
+    } catch {
+      continue;
+    }
+    for (const [key, entries] of Object.entries(json?.plugins || {})) {
+      if (key.split("@")[0] !== `purge-${host}`) continue;
+      for (const e of Array.isArray(entries) ? entries : []) {
+        if (e?.installPath && fs.existsSync(e.installPath)) hits.add(e.installPath);
+      }
+    }
+  }
+  return [...hits];
 }
 
 function cmdDoctor() {
   const issues = [];
   const ok = [];
-  const fullSrc = loadPreset("default");
-  const liteSrc = loadPreset("lite");
 
   console.log(`dsh-purge-ports v${VERSION} · doctor\n`);
-  console.log(`规则源  full ${Buffer.byteLength(fullSrc, "utf8")} B sha:${sha(fullSrc)}  lite ${Buffer.byteLength(liteSrc, "utf8")} B sha:${sha(liteSrc)}`);
+  console.log("规则源");
+  for (const name of PRESET_NAMES) {
+    const exp = expectedPreset(name);
+    if (!exp) {
+      console.log(`  · ${name.padEnd(9)} 源缺失，无法重算`);
+      continue;
+    }
+    const built = readIfExists(path.join(ROOT, "presets", `${name}.md`));
+    const builtOk = built !== null && norm(built).trimEnd() === norm(exp).trimEnd();
+    console.log(
+      `  ${builtOk ? "✓" : "✗"} ${name.padEnd(9)} ${String(Buffer.byteLength(exp, "utf8")).padStart(6)} B  sha:${sha(exp)}  ${builtOk ? "" : "组装产物与源不一致，跑 sync.mjs"}`,
+    );
+    if (!builtOk) issues.push(`${name}: presets/${name}.md 与 core/ 源组装结果不一致，跑 node scripts/sync.mjs`);
+  }
+  console.log("");
 
   for (const [name, h] of Object.entries(HOSTS)) {
     console.log(`\n── ${h.label} (${name})`);
@@ -391,12 +489,20 @@ function cmdDoctor() {
       const bytes = Buffer.byteLength(body, "utf8");
       const limit = name === "workbuddy" ? 8192 : null;
       const over = limit && bytes > limit;
-      const src = bytes > 9000 ? fullSrc : liteSrc;
-      const drift = sha(body) !== sha(src);
+      const { core, scope } = splitScope(body);
+      const matched = matchPreset(core);
+      const drift = !matched;
+      const scopeStale = !scopeInSync(scope);
       console.log(`  ${over ? "✗" : "✓"} ${f}`);
       console.log(`      体积 ${bytes} B${limit ? ` / 上限 ${limit} B` : ""}   sha:${sha(body)}`);
+      console.log(`      预设 ${matched || "未知（与任何预设都不匹配）"}`);
       if (over) issues.push(`${h.label}: ${path.basename(f)} 超过 ${limit} B 上限，会被截断`);
-      if (drift) issues.push(`${h.label}: ${path.basename(f)} 的块与仓库源不一致（可能手改过），跑 install 覆盖`);
+      if (drift) {
+        issues.push(`${h.label}: ${path.basename(f)} 的块与仓库源不一致（可能手改过），跑 install 覆盖`);
+      }
+      if (scopeStale) {
+        issues.push(`${h.label}: ${path.basename(f)} 的「已声明范围」与 scope.json 不同步，跑 install 覆盖`);
+      }
     }
     if (!anyBlock) issues.push(`${h.label}: 没有任何注入块，跑 install`);
 
@@ -430,10 +536,14 @@ function cmdDoctor() {
 // ---------------------------------------------------------------- verify
 
 function cmdVerify() {
-  const fullSrc = loadPreset("default");
-  const liteSrc = loadPreset("lite");
-  console.log(`full  ${Buffer.byteLength(fullSrc, "utf8")} B  sha:${sha(fullSrc)}`);
-  console.log(`lite  ${Buffer.byteLength(liteSrc, "utf8")} B  sha:${sha(liteSrc)}`);
+  console.log("预设");
+  const expected = [];
+  for (const name of PRESET_NAMES) {
+    const exp = expectedPreset(name);
+    if (!exp) continue;
+    expected.push({ name, sha: sha(exp), bytes: Buffer.byteLength(exp, "utf8") });
+    console.log(`  ${name.padEnd(9)} ${String(Buffer.byteLength(exp, "utf8")).padStart(6)} B  sha:${sha(exp)}`);
+  }
   console.log("");
   for (const [name, h] of Object.entries(HOSTS)) {
     for (const f of [h.userFile(), ...h.projectFiles(process.cwd())]) {
@@ -442,9 +552,13 @@ function cmdVerify() {
         console.log(`${h.label.padEnd(10)} ${"未注入".padEnd(8)} ${f}`);
         continue;
       }
-      const src = Buffer.byteLength(body, "utf8") > 9000 ? fullSrc : liteSrc;
-      const same = sha(body) === sha(src);
-      console.log(`${h.label.padEnd(10)} ${(same ? "一致" : "漂移").padEnd(8)} ${sha(body)}  ${Buffer.byteLength(body, "utf8")} B  ${f}`);
+      const { core, scope } = splitScope(body);
+      const matched = matchPreset(core);
+      const stale = !scopeInSync(scope);
+      const state = matched ? `一致(${matched})` : "漂移";
+      console.log(
+        `${h.label.padEnd(10)} ${state.padEnd(14)} ${sha(body)}  ${Buffer.byteLength(body, "utf8")} B  ${f}${stale ? "  [范围段待同步]" : ""}`,
+      );
     }
   }
 }
